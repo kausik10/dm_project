@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
+import streamlit as st
 
 def plot_volatility_trend(df, symbols):
     # Ensure Volatility is calculated

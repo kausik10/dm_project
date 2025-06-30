@@ -11,7 +11,7 @@ from stock_future_trend import detect_trend, get_price_trend_slope
 from project_future_prices import plot_future_projection
 
 st.set_page_config(page_title="NEPSE Dashboard", layout="wide")
-st.title("📈 NEPSE Dashboard")
+st.header("📈 NEPSE Dashboard")
 @st.cache_data
 def load_data():
     # Load CSVs
@@ -143,136 +143,173 @@ def load_data():
 # Load data
 nepse_combined_df, nepse_index_df, missing_table = load_data()
 
-# Display data
-st.subheader("NEPSE Combined Stock Data")
-st.dataframe(nepse_combined_df.head())
+tabs = st.tabs([
+    "🗃️ Data Overview", 
+    "🔺 Top 20 Volatile", 
+    "🔥 Sector Heatmap", 
+    "📈 Volatility Trend", 
+    "🔍 Clustering", 
+    "📊 Closing Price Trend", 
+    "📉 Correlation Matrix", 
+    "🕯️ Candlestick Chart",
+    "🔮 Stock Trend Prediction",
+])
 
-st.subheader("NEPSE Index Data (Filtered from 2024-03-04)")
-st.dataframe(nepse_index_df.head())
+# 1. Data Overview
+with tabs[0]:
+    # Display data
+    st.subheader("NEPSE Combined Stock Data")
+    st.dataframe(nepse_combined_df.head())
 
-st.subheader("📊 Missing Value Percentage (NEPSE Combined)")
-st.dataframe(missing_table)
+    st.subheader("NEPSE Index Data (Filtered from 2024-03-04)")
+    st.dataframe(nepse_index_df.head())
 
-# Plot the Volatility of top 20 symbols
-st.subheader("🔺 Top 20 Most Volatile Symbols")
+    st.subheader("📊 Missing Value Percentage (NEPSE Combined)")
+    st.dataframe(missing_table)
 
-fig_vol = calculate_volatility_plot(nepse_combined_df)
-st.pyplot(fig_vol)
+with tabs[1]:
+    # Plot the Volatility of top 20 symbols
+    st.subheader("🔺 Top 20 Most Volatile Symbols")
 
-# HeatMap of NEPSE Stocks by Sector
-st.subheader("🔥 NEPSE Stock Heatmap by Sector")
-fig = plot_stock_heatmap(nepse_combined_df)
-st.plotly_chart(fig, use_container_width=True)
+    fig_vol = calculate_volatility_plot(nepse_combined_df)
 
-# Daily Volatility Trend Comparison
+    left_col, center_col, right_col = st.columns([1, 3, 1])  
+    with center_col:
+        st.pyplot(fig_vol)
 
-st.subheader("📈 Volatility Trend Comparison")
 
-selected_symbols = st.multiselect("Select Symbols", sorted(nepse_combined_df['Symbol'].unique()), default=['BHL'])
+# 3. Heatmap by Sector
+with tabs[2]:
+    # HeatMap of NEPSE Stocks by Sector
+    st.subheader("🔥 NEPSE Stock Heatmap by Sector")
+    fig = plot_stock_heatmap(nepse_combined_df)
+    st.plotly_chart(fig, use_container_width=True)
 
-if selected_symbols:
-    fig_vol_trend = plot_volatility_trend(nepse_combined_df, selected_symbols)
-    if fig_vol_trend:
-        st.pyplot(fig_vol_trend)
+
+# 4. Volatility Trend
+with tabs[3]:
+    # Daily Volatility Trend Comparison
+    st.subheader("📈 Volatility Trend Comparison")
+
+    selected_symbols = st.multiselect("Select Symbols", sorted(nepse_combined_df['Symbol'].unique()), default=['BHL'])
+
+    if selected_symbols:
+        fig_vol_trend = plot_volatility_trend(nepse_combined_df, selected_symbols)
+        if fig_vol_trend:
+            left_col, center_col, right_col = st.columns([1, 3, 1])  
+            with center_col:
+                    st.pyplot(fig_vol_trend)
 
 
 # Clustering and PCA Visualization
 
-# Cluster feature set to be used externally
-cluster_features = [
-    'DiffPercent',
-    'RangePercent',
-    'VWAPPercent',
-    'Volatility',
-    'Transactions',
-    'ClosePrice'
-]
+# 5. Clustering
+with tabs[4]:
+    # Cluster feature set to be used externally
+    cluster_features = [
+        'DiffPercent',
+        'RangePercent',
+        'VWAPPercent',
+        'Volatility',
+        'Transactions',
+        'ClosePrice'
+    ]
 
-st.subheader("🔍 NEPSE Stock Clustering")
+    st.subheader("🔍 NEPSE Stock Clustering")
 
-k_val = st.slider("Number of clusters (k)", min_value=2, max_value=10, value=3)
-use_std = st.checkbox("Include Std Deviation of Close Price")
+    k_val = st.slider("Number of clusters (k)", min_value=2, max_value=10, value=3)
+    use_std = st.checkbox("Include Std Deviation of Close Price")
 
-from stock_clusters import plot_stock_clusters  # local import is fine here
+    from stock_clusters import plot_stock_clusters  # local import is fine here
 
-fig_cluster, df_cluster = plot_stock_clusters(nepse_combined_df, cluster_features.copy(), k=k_val, use_std=use_std)
-st.pyplot(fig_cluster)
+    fig_cluster, df_cluster = plot_stock_clusters(nepse_combined_df, cluster_features.copy(), k=k_val, use_std=use_std)
+    left_col, center_col, right_col = st.columns([1, 3, 1])  
+    with center_col:
+        st.pyplot(fig_cluster)
 
-# Dispaly the Stocks Based on Clusters
-st.subheader("📌 Stocks per Cluster")
-for cluster_id in sorted(df_cluster['Cluster'].unique()):
-    symbols = df_cluster[df_cluster['Cluster'] == cluster_id]['Symbol'].tolist()
-    with st.expander(f"Cluster {cluster_id} ({len(symbols)} stocks)"):
-        st.write(', '.join(symbols))
+    # Dispaly the Stocks Based on Clusters
+    st.subheader("📌 Stocks per Cluster")
+    for cluster_id in sorted(df_cluster['Cluster'].unique()):
+        symbols = df_cluster[df_cluster['Cluster'] == cluster_id]['Symbol'].tolist()
+        with st.expander(f"Cluster {cluster_id} ({len(symbols)} stocks)"):
+            st.write(', '.join(symbols))
 
+# 6. Closing Price Trend
+with tabs[5]:
+    # Display the closing price trend for selected symbols
+    st.subheader("📈 Closing Price Trend")
 
-# Display the closing price trend for selected symbols
-
-st.subheader("📈 Closing Price Trend")
-
-selected_symbols = st.multiselect(
-    "Select Stocks",
-    options=sorted(nepse_combined_df['Symbol'].unique()),
-    default=['BHL'],
-    key='close_price_trend'
-)
-
-plot_closing_price_trend(nepse_combined_df, selected_symbols)
-
-# Correlation of Stock Price
-
-st.subheader("📊 Correlation Matrix")
-
-corr_matrix, fig = correlation_stock_price(nepse_combined_df)
-
-# Display the heatmap figure
-st.pyplot(fig)
-
-# Optionally, display the correlation matrix as a table
-st.dataframe(corr_matrix)
+    selected_symbols = st.multiselect(
+        "Select Stocks",
+        options=sorted(nepse_combined_df['Symbol'].unique()),
+        default=['BHL'],
+        key='close_price_trend'
+    )
+    left_col, center_col, right_col = st.columns([1, 3, 1])  
+    with center_col:
+        plot_closing_price_trend(nepse_combined_df, selected_symbols)
 
 
-# Plot individual candlestick chart for a selected stock symbol
-st.subheader("📈 Individual Stock Candlestick Chart")
+# 7. Correlation Matrix
+with tabs[6]:
+    # Correlation of Stock Price
+    st.subheader("📊 Correlation Matrix")
 
-selected_symbol = st.selectbox("Selected Stock Symbol", options=sorted(nepse_combined_df['Symbol'].unique()), index=0)
+    corr_matrix, fig = correlation_stock_price(nepse_combined_df)
 
-fig = plot_candlestick(nepse_combined_df, selected_symbol)
-if fig:
-    st.plotly_chart(fig)
-else:
-    st.write(f"No data available for symbol {selected_symbol}.")
+    # Display the heatmap figure
+    left_col, center_col, right_col = st.columns([1, 3, 1])  
+    with center_col:
+        st.pyplot(fig)
+
+    # Optionally, display the correlation matrix as a table
+    st.dataframe(corr_matrix)
+
+
+# 8. Candlestick Chart
+with tabs[7]:
+    # Plot individual candlestick chart for a selected stock symbol
+    st.subheader("📈 Individual Stock Candlestick Chart")
+
+    selected_symbol = st.selectbox("Selected Stock Symbol", options=sorted(nepse_combined_df['Symbol'].unique()), index=0)
+
+    fig = plot_candlestick(nepse_combined_df, selected_symbol)
+    if fig:
+        st.plotly_chart(fig)
+    else:
+        st.write(f"No data available for symbol {selected_symbol}.")
 
 
 # Display the stock future trend
+with tabs[8]:
+    # Stock Trend Prediction
+    st.subheader("🔮 Stock Trend Prediction (Visual + Heuristic)")
 
-st.subheader("🔮 Stock Trend Prediction (Visual + Heuristic)")
+    symbol = st.selectbox("Select symbol", nepse_combined_df['Symbol'].unique())
 
-symbol = st.selectbox("Select symbol", nepse_combined_df['Symbol'].unique())
+    stock_data = nepse_combined_df[nepse_combined_df['Symbol'] == symbol].sort_values('Date')
 
-stock_data = nepse_combined_df[nepse_combined_df['Symbol'] == symbol].sort_values('Date')
+    trend_signal = detect_trend(stock_data)
+    trend_slope_text, slope_value = get_price_trend_slope(stock_data)
 
-trend_signal = detect_trend(stock_data)
-trend_slope_text, slope_value = get_price_trend_slope(stock_data)
-
-st.markdown(f"**Current Trend Based on 120-Day MA:** {trend_signal}")
-st.markdown(f"**Recent Price Slope (30 days):** {trend_slope_text} (slope: `{slope_value:.4f}`)")
+    st.markdown(f"**Current Trend Based on 120-Day MA:** {trend_signal}")
+    st.markdown(f"**Recent Price Slope (30 days):** {trend_slope_text} (slope: `{slope_value:.4f}`)")
 
 
-# Project Future Prices
+    # Project Future Prices
 
-st.subheader("📈 Next 10-Day Price Projection (Linear Trend)")
+    st.subheader("📈 Next 10-Day Price Projection (Linear Trend)")
 
-symbol = st.selectbox("Select stock symbol", nepse_combined_df['Symbol'].unique())
-stock_data = nepse_combined_df[nepse_combined_df['Symbol'] == symbol]
+    symbol = st.selectbox("Select stock symbol", nepse_combined_df['Symbol'].unique())
+    stock_data = nepse_combined_df[nepse_combined_df['Symbol'] == symbol]
 
-fig, future_dates, y_pred = plot_future_projection(stock_data, symbol)
+    fig, future_dates, y_pred = plot_future_projection(stock_data, symbol)
 
-st.plotly_chart(fig)
+    st.plotly_chart(fig)
 
-# Optionally display table
-proj_df = pd.DataFrame({
-    "Date": future_dates,
-    "Projected Price": y_pred
-})
-st.dataframe(proj_df.style.format({"Projected Price": "{:.2f}"}))
+    # Optionally display table
+    proj_df = pd.DataFrame({
+        "Date": future_dates,
+        "Projected Price": y_pred
+    })
+    st.dataframe(proj_df.style.format({"Projected Price": "{:.2f}"}))
