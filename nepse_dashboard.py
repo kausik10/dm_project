@@ -18,7 +18,7 @@ def load_data():
     nepse_combined_df = pd.read_csv("nepse_combined_cleaned.csv", low_memory=False)
     nepse_index_df = pd.read_csv("combined_nepse_index_data.csv")
 
-    # Preprocess nepse_index_df
+    # Process 'Date' column
     nepse_index_df.rename(columns={'Date (AD)': 'Date'}, inplace=True)
     nepse_index_df['Date'] = nepse_index_df['Date'].astype(str).str.strip()
     nepse_index_df['Date'] = pd.to_datetime(nepse_index_df['Date'], format='mixed', errors='coerce')
@@ -27,7 +27,6 @@ def load_data():
     nepse_index_df.sort_values('Date', inplace=True)
     nepse_index_df['Date'] = nepse_index_df['Date'].dt.strftime('%Y-%m-%d')
 
-    # Preprocess nepse_combined_df
     nepse_combined_df['Date'] = pd.to_datetime(nepse_combined_df['Date'], format='%Y_%m_%d', errors='coerce')
     nepse_combined_df.dropna(subset=['Date'], inplace=True)
 
@@ -268,7 +267,6 @@ with tabs[6]:
 
 # 8. Candlestick Chart
 with tabs[7]:
-    # Plot individual candlestick chart for a selected stock symbol
     st.subheader("📈 Individual Stock Candlestick Chart")
 
     selected_symbol = st.selectbox("Selected Stock Symbol", options=sorted(nepse_combined_df['Symbol'].unique()), index=0)
@@ -282,7 +280,6 @@ with tabs[7]:
 
 # Display the stock future trend
 with tabs[8]:
-    # Stock Trend Prediction
     st.subheader("🔮 Stock Trend Prediction (Visual + Heuristic)")
 
     symbol = st.selectbox("Select symbol", nepse_combined_df['Symbol'].unique())
@@ -307,7 +304,6 @@ with tabs[8]:
 
     st.plotly_chart(fig)
 
-    # Optionally display table
     proj_df = pd.DataFrame({
         "Date": future_dates,
         "Projected Price": y_pred

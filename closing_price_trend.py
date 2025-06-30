@@ -4,17 +4,9 @@ import seaborn as sns
 import streamlit as st
 
 def plot_closing_price_trend(nepse_combined_df, company_symbols=['BHL']):
-    """
-    Plot the closing price trend for one or more stocks.
-
-    Parameters:
-    - nepse_combined_df: cleaned dataframe
-    - company_symbols: list of stock symbols (default = ['NABIL'])
-    """
     if isinstance(company_symbols, str):
         company_symbols = [company_symbols]
 
-    # Filter only those that exist in the data
     available_symbols = nepse_combined_df['Symbol'].unique()
     valid_symbols = [s for s in company_symbols if s in available_symbols]
 

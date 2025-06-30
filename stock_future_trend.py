@@ -1,7 +1,5 @@
 def detect_trend(stock_data):
-    """
-    Returns a simple bullish/bearish signal based on close vs 120-day MA.
-    """
+    
     latest_close = stock_data['ClosePrice'].iloc[-1]
     latest_ma = stock_data['120Days'].iloc[-1]
 
@@ -16,9 +14,7 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 
 def get_price_trend_slope(stock_data, window=30):
-    """
-    Fit linear regression on last `window` days to estimate trend slope.
-    """
+    
     recent_data = stock_data[-window:]
     X = np.arange(window).reshape(-1, 1)
     y = recent_data['ClosePrice'].values.reshape(-1, 1)
