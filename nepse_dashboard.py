@@ -7,6 +7,8 @@ from stock_clusters import plot_stock_clusters
 from closing_price_trend import plot_closing_price_trend
 from correlation_stock_price import correlation_stock_price
 from individual_candle_stick import plot_candlestick
+from stock_future_trend import detect_trend, get_price_trend_slope
+from project_future_prices import plot_future_projection
 
 st.set_page_config(page_title="NEPSE Dashboard", layout="wide")
 st.title("📈 NEPSE Dashboard")
@@ -240,3 +242,37 @@ if fig:
     st.plotly_chart(fig)
 else:
     st.write(f"No data available for symbol {selected_symbol}.")
+
+
+# Display the stock future trend
+
+st.subheader("🔮 Stock Trend Prediction (Visual + Heuristic)")
+
+symbol = st.selectbox("Select symbol", nepse_combined_df['Symbol'].unique())
+
+stock_data = nepse_combined_df[nepse_combined_df['Symbol'] == symbol].sort_values('Date')
+
+trend_signal = detect_trend(stock_data)
+trend_slope_text, slope_value = get_price_trend_slope(stock_data)
+
+st.markdown(f"**Current Trend Based on 120-Day MA:** {trend_signal}")
+st.markdown(f"**Recent Price Slope (30 days):** {trend_slope_text} (slope: `{slope_value:.4f}`)")
+
+
+# Project Future Prices
+
+st.subheader("📈 Next 10-Day Price Projection (Linear Trend)")
+
+symbol = st.selectbox("Select stock symbol", nepse_combined_df['Symbol'].unique())
+stock_data = nepse_combined_df[nepse_combined_df['Symbol'] == symbol]
+
+fig, future_dates, y_pred = plot_future_projection(stock_data, symbol)
+
+st.plotly_chart(fig)
+
+# Optionally display table
+proj_df = pd.DataFrame({
+    "Date": future_dates,
+    "Projected Price": y_pred
+})
+st.dataframe(proj_df.style.format({"Projected Price": "{:.2f}"}))
